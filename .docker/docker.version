@@ -1,0 +1,1 @@
+VLLM_VERSION=$(grep -oP 'vllm==\K\d+\.\d+\.\d+' .docker/scripts/requirements.txt)

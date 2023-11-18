@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  # Defines a service name
+  app:
+    build:
+      # Sets the build context to the current directory
+      context: .
+      # Specifies the Dockerfile to use for the build
+      dockerfile: .docker/Dockerfile.base
+      args:
+        ARG_BUILD_FROM: $BUILD_FROM
+        ARG_TORCH_VERSION: $APP_TORCH_VERSION
+        ARG_TORCH_CUDNN: $APP_TORCH_CUDNN
+    # Sets the image name for the built image
+    image: $IMAGE_NAME:$IMAGE_TAG
+    # Sets the hostname of the container
+    hostname: $CONTAINER_HOSTNAME
+    # set the environment variables
+    ulimits:
+      # Sets the stack size and memory lock limits
+      stack: 67108864
+      memlock: -1
+    # Allows the container to use the host's IPC namespace
+    ipc: $CONTAINER_IPC
+networks:
+  default:
+    # Sets the name of the default network and makes it external
+    name: $CONTAINER_NETWORK_NAME
+    external: true
