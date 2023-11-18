@@ -1,0 +1,55 @@
+FROM --platform=amd64 nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04 as base
+
+# Sets labels for the image
+LABEL org.opencontainers.image.source="https://github.com/entelecheia/vllm"
+LABEL org.opencontainers.image.description="Container images for running vLLM models on the container platforms."
+LABEL org.opencontainers.image.licenses="MIT"
+
+RUN apt update && \
+    apt install -y python3-pip python3-packaging python3-venv sudo gosu \
+    git ninja-build && \
+    pip3 install -U pip
+
+ARG MAX_JOBS
+
+ARG ARG_APP_INSTALL_ROOT="/opt"
+ARG ARG_APP_CLONE_DIRNAME="vllm"
+ENV APP_INSTALL_ROOT $ARG_APP_INSTALL_ROOT
+ENV APP_CLONE_DIRNAME $ARG_APP_CLONE_DIRNAME
+ENV VIRTUAL_ENV=${APP_INSTALL_ROOT}/.venvs/${APP_CLONE_DIRNAME}
+# Add the path of the virtual environment to the PATH environment variable
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Sets the working directory to workspace root
+WORKDIR $APP_INSTALL_ROOT
+
+# Sets the time zone within the container
+ENV TZ="Asia/Seoul"
+
+# Sets Python environment variables
+ENV PIP_DEFAULT_TIMEOUT 100
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+ARG ARG_TORCH_CUDNN=cu118
+ARG ARG_TORCH_VERSION="2.1.1"
+ENV TORCH_VERSION=$ARG_TORCH_VERSION
+ENV TORCH_CUDNN=$ARG_TORCH_CUDNN
+# Tweak this list to reduce build time
+# https://developer.nvidia.com/cuda-gpus
+ENV TORCH_CUDA_ARCH_LIST "7.0;7.2;7.5;8.0;8.6;8.9;9.0"
+
+# We have to manually install Torch otherwise apex & xformers won't build
+# Install pytorch and openllm to the virtual environment
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python3 -m venv ${VIRTUAL_ENV} &&\
+    pip3 install --upgrade pip setuptools wheel ninja packaging && \
+    pip3 install "torch==${TORCH_VERSION}" --extra-index-url "https://download.pytorch.org/whl/${TORCH_CUDNN}"
+# To enable H100 PCIe support, install PyTorch >=2.2.0 by uncommenting the following line
+# RUN pip3 install "torch==2.2.0.dev20231018+cu118" --index-url https://download.pytorch.org/whl/nightly/cu118
+
+# This build is slow but NVIDIA does not provide binaries. Increase MAX_JOBS as needed.
+RUN git clone https://github.com/NVIDIA/apex && \
+    cd apex && git checkout 2386a912164b0c5cfcd8be7a2b890fbac5607c82 && \
+    sed -i '/check_cuda_torch_binary_vs_bare_metal(CUDA_HOME)/d' setup.py && \
+    python3 setup.py install --cpp_ext --cuda_ext
