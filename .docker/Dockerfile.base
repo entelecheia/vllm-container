@@ -1,4 +1,4 @@
-FROM --platform=amd64 nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04 as base
+FROM --platform=amd64 nvcr.io/nvidia/cuda:12.1.0-devel-ubuntu22.04 as base
 
 # Sets labels for the image
 LABEL org.opencontainers.image.source="https://github.com/entelecheia/vllm-container"
@@ -32,7 +32,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
 ARG ARG_TORCH_CUDNN=cu118
-ARG ARG_TORCH_VERSION="2.1.1"
+ARG ARG_TORCH_VERSION="2.1.2"
 ENV TORCH_VERSION=$ARG_TORCH_VERSION
 ENV TORCH_CUDNN=$ARG_TORCH_CUDNN
 # Tweak this list to reduce build time
@@ -46,7 +46,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip3 install --upgrade pip setuptools wheel ninja packaging && \
     pip3 install "torch==${TORCH_VERSION}" --extra-index-url "https://download.pytorch.org/whl/${TORCH_CUDNN}"
 # To enable H100 PCIe support, install PyTorch >=2.2.0 by uncommenting the following line
-# RUN pip3 install "torch==2.2.0.dev20231018+cu118" --index-url https://download.pytorch.org/whl/nightly/cu118
+# RUN pip3 install "torch==2.2.0.dev20231018+cu121" --index-url https://download.pytorch.org/whl/nightly/cu121
 
 # This build is slow but NVIDIA does not provide binaries. Increase MAX_JOBS as needed.
 RUN git clone https://github.com/NVIDIA/apex && \

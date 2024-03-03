@@ -1,5 +1,5 @@
 --extra-index-url "https://download.pytorch.org/whl/${TORCH_CUDNN}"
-vllm==0.2.0
-xformers==0.0.22
-transformers==4.34.0
-fschat[model_worker]==0.2.30
+vllm==0.3.2
+xformers==0.0.23.post1
+transformers>=4.38.0 
+# fschat[model_worker]==0.2.30
